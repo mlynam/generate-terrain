@@ -31,9 +31,14 @@ namespace generate_terrain
             target.Y = value.Y;
         }
 
-        public static int IntClampMax(this float value, int max)
+        public static int IntClamp(this int value, int min, int max)
         {
-            return Math.Min(Math.Max((int)value, 0), max);
+            return Math.Min(Math.Max(value, min), max);
+        }
+
+        public static int StayPositive(this int value, int fallback)
+        {
+            return value > -1 ? value : fallback;
         }
     }
 }

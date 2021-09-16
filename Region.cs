@@ -3,7 +3,7 @@ using System.Numerics;
 
 namespace generate_terrain
 {
-    public class Region
+    public partial class Region
     {
         float m_radius = 0;
         Vector2 m_center;
@@ -12,22 +12,22 @@ namespace generate_terrain
         float m_max_radius;
         string m_name;
         uint m_color;
+        Terrain m_terrain;
 
-        public Region(int bitmap_index, uint color, int rate, string name = null)
+        public Region(int bitmap_index, uint color, int rate, Terrain terrain, string name = null)
         {
+            m_terrain = terrain;
             m_color = color;
             m_index = bitmap_index;
             m_name = name ?? "unknown";
             m_rate = rate;
-            m_center = new Vector2(
-                x: m_index % Options.MAP_TILE_SIZE,
-                y: m_index / Options.MAP_TILE_SIZE
-            );
-
+            m_center = ConvertIndexToPosition(m_index);
             m_max_radius = Vector2.Distance(m_center, TOP_LEFT);
             m_max_radius = MathF.Max(m_max_radius, Vector2.Distance(m_center, TOP_RIGHT));
             m_max_radius = MathF.Max(m_max_radius, Vector2.Distance(m_center, BOTTOM_RIGHT));
             m_max_radius = MathF.Max(m_max_radius, Vector2.Distance(m_center, BOTTOM_LEFT));
+
+            InitializeNeighbor(bitmap_index);
         }
 
         public float MaxRadius => m_max_radius;
@@ -35,39 +35,14 @@ namespace generate_terrain
         public Vector2 Center => m_center;
         public float Radius => m_radius;
         public bool IsGrowing => m_radius < m_max_radius;
+        public uint Color => m_color;
 
-        public void Grow(Terrain terrain)
+        public void Grow()
         {
             m_radius += m_rate;
 
-            var circle = MathF.PI * 2;
-            var sweep = MathF.PI / Options.MAP_TILE_SIZE / 2;
-            var angle = 0f;
-
-            while (angle < circle)
-            {
-                var x = MathF.Cos(angle);
-                var y = MathF.Sin(angle);
-                var to = m_center + new Vector2(x, y) * m_radius;
-
-                var r = to - m_center;
-                var steps = (int)MathF.Ceiling(r.Length());
-
-                for (int i = 0; i < steps; ++i)
-                {
-                    var pixel = m_center + Vector2.Normalize(r) * i;
-                    if (terrain.Contains(pixel))
-                    {
-                        var index = (int)pixel.Y * Options.MAP_TILE_SIZE + (int)pixel.X;
-                        if (terrain.Tilemap[index] == Options.SEA_FLOOR)
-                        {
-                            terrain.Tilemap[index] = m_color;
-                        }
-                    }
-                }
-
-                angle += sweep;
-            }
+            Neighbor();
+            // Sweep();
         }
 
         public override string ToString()
@@ -76,9 +51,16 @@ namespace generate_terrain
                 $"Center: {m_center}, " +
                 $"Radius: {m_radius}, " +
                 $"Index: {m_index}, " +
-                $"Color: {m_color.ToString("x")}, " +
+                $"Color: {m_color.ToString("x").PadLeft(8, '0')}, " +
                 $"Max Radius: {m_max_radius}";
         }
+
+        private Vector2 ConvertIndexToPosition(int index) => new Vector2(
+            x: index % Options.MAP_TILE_SIZE,
+            y: index / Options.MAP_TILE_SIZE
+        );
+
+        private int ConvertPositionToIndex(Vector2 position) => (int)position.Y * Options.MAP_TILE_SIZE + (int)position.X;
 
         private static Vector2 TOP_LEFT = new Vector2(0, 0);
         private static Vector2 TOP_RIGHT = new Vector2(Options.MAP_TILE_SIZE, 0);

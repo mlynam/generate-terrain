@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 
 namespace generate_terrain
 {
@@ -6,40 +7,29 @@ namespace generate_terrain
     {
         static void Main(string[] args)
         {
-            int rng_seed = 3200;
-            int size_seed = 1;
-            int fault_line_seed = 5;
-            int region_seed = 3;
+            var stopwatch = new Stopwatch();
+            var seed = new Seed(
+                size: 1,
+                region_count: 8,
+                region_growth_rate: 5
+            );
 
-            Terrain terrain = new Terrain(size_seed);
-            Region[] regions = new Region[region_seed];
+            Terrain terrain = new Terrain(seed);
 
-            int regionSize = (terrain.Tilemap.Length - terrain.Deadzone * region_seed) / region_seed;
+            Console.WriteLine(terrain);
 
-            var rng = new Random(rng_seed);
-            int offset = terrain.Deadzone / 2;
+            Console.Write("\nGenerating fault lines...");
+            stopwatch.Start();
+            terrain.DrawFaultLines();
+            stopwatch.Stop();
+            Console.WriteLine($"{stopwatch.ElapsedMilliseconds}ms");
 
-            for (int i = 0; i < regions.Length; i++)
-            {
-                var next = rng.Next(regionSize);
-                var color = rng.Next(0xFFFFFF);
-                var rate = rng.Next(fault_line_seed, region_seed + fault_line_seed);
-
-                var region = new Region(
-                    bitmap_index: offset + next,
-                    color: (uint)(color | 0x000000FF),
-                    rate: rate,
-                    name: $"Region {i + 1}");
-
-                terrain.Tilemap[region.Index] = 0xAAAAAAFF;
-                regions[i] = region;
-                offset += (regionSize + terrain.Deadzone);
-
-                Console.WriteLine(region);
-            }
-
-            terrain.DrawFaultLines(regions, fault_line_seed);
+            stopwatch.Reset();
+            stopwatch.Start();
+            Console.Write("Writing bitmap...");
             terrain.SaveBitmap("terrain");
+            stopwatch.Stop();
+            Console.WriteLine($"{stopwatch.ElapsedMilliseconds}ms");
         }
     }
 }
