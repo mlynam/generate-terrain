@@ -71,7 +71,7 @@ namespace generate_terrain
 
         public bool Contains(Vector2 point)
         {
-            return point.X > 0 && point.X < m_size && point.Y > 0 && point.Y < m_size;
+            return point.X > 0 && point.X < Options.MAP_TILE_SIZE && point.Y > 0 && point.Y < Options.MAP_TILE_SIZE;
         }
 
         public int Size => m_size;

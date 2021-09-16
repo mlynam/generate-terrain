@@ -63,7 +63,7 @@ namespace generate_terrain
         {
             if (rate < 0)
             {   // Default invocation begins recursion
-                Neighbor(m_rate);
+                Neighbor(m_rate + m_terrain.RngNext(15));
             }
             else if (rate == 0)
             {   // When we exhaust the rate, we unwind
@@ -76,28 +76,32 @@ namespace generate_terrain
                 {
                     // Top
                     var top = NeighborPixelTop(index);
-                    if (index > 0 && !IsFaultLine(top, m_terrain) && m_terrain.Tilemap[top] != m_color)
+                    var position = ConvertIndexToPosition(top);
+                    if (m_terrain.Contains(position) && !IsFaultLine(top, m_terrain) && m_terrain.Tilemap[top] != m_color)
                     {
                         next.Add(top);
                     }
 
                     // Right
                     var right = NeighborPixelRight(index, m_terrain.Tilemap.Length - 1);
-                    if (right % Options.MAP_TILE_SIZE != 0 && !IsFaultLine(right, m_terrain) && m_terrain.Tilemap[right] != m_color)
+                    position = ConvertIndexToPosition(right);
+                    if (m_terrain.Contains(position) && !IsFaultLine(right, m_terrain) && m_terrain.Tilemap[right] != m_color)
                     {
                         next.Add(right);
                     }
 
                     // Bottom
                     var bottom = NeighborPixelBottom(index, m_terrain.Tilemap.Length - 1);
-                    if (bottom < m_terrain.Tilemap.Length && !IsFaultLine(bottom, m_terrain) && m_terrain.Tilemap[bottom] != m_color)
+                    position = ConvertIndexToPosition(bottom);
+                    if (m_terrain.Contains(position) && !IsFaultLine(bottom, m_terrain) && m_terrain.Tilemap[bottom] != m_color)
                     {
                         next.Add(bottom);
                     }
 
                     // Left
                     var left = NeighborPixelLeft(index);
-                    if (left % (Options.MAP_TILE_SIZE - 1) != 0 && !IsFaultLine(left, m_terrain) && m_terrain.Tilemap[left] != m_color)
+                    position = ConvertIndexToPosition(left);
+                    if (m_terrain.Contains(position) && !IsFaultLine(left, m_terrain) && m_terrain.Tilemap[left] != m_color)
                     {
                         next.Add(left);
                     }
