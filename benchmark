@@ -1,0 +1,12 @@
+Terrain   Seed: 389, Tilesize: 1365, Size: 1, Growth Rate: 5
+Region 1  Center: <1137, 75>, Radius: 0, Index: 103512, Color: 00f508ff, Max Radius: 1719.5549
+Region 2  Center: <682, 227>, Radius: 0, Index: 310537, Color: 00d580ff, Max Radius: 1327.2275
+Region 3  Center: <227, 379>, Radius: 0, Index: 517562, Color: 0098efff, Max Radius: 1505.7357
+Region 4  Center: <1137, 530>, Radius: 0, Index: 724587, Color: 00e14dff, Max Radius: 1410.6715
+Region 5  Center: <682, 682>, Radius: 0, Index: 931612, Color: 00d94bff, Max Radius: 965.90784
+Region 6  Center: <227, 834>, Radius: 0, Index: 1138637, Color: 0061cdff, Max Radius: 1410.8862
+Region 7  Center: <1137, 985>, Radius: 0, Index: 1345662, Color: 00eff2ff, Max Radius: 1504.3251
+Region 8  Center: <682, 1137>, Radius: 0, Index: 1552687, Color: 00bc1fff, Max Radius: 1326.3702
+
+Generating fault lines...909ms
+Writing bitmap...111ms
