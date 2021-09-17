@@ -6,6 +6,7 @@ namespace generate_terrain
         int m_region_count;
         int m_region_growth_rate;
 
+
         public Seed(int seed)
         {
             m_size = (int)(byte)seed >> 8;
@@ -22,7 +23,7 @@ namespace generate_terrain
 
         public int Pack()
         {
-            return m_size << 8 | m_region_count << 4 | m_region_growth_rate;
+            return m_size << 16 | m_region_count << 8 | m_region_growth_rate;
         }
 
         public int Size => m_size;

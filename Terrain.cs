@@ -24,10 +24,10 @@ namespace generate_terrain
             }
 
             m_seed = seed;
-            m_rng = new Random(seed.Pack());
             m_size = size * Options.MAP_TILE_SIZE;
+            m_rng = new Random(seed.Pack());
             m_bitmap = new uint[size * m_tile.Length];
-            m_deadzone = m_tile.Length / (seed.RegionCount + 1);
+            m_deadzone = m_tile.Length / (seed.RegionCount + 1) / seed.RegionCount;
 
             int region_size = (m_tile.Length - m_deadzone * (seed.RegionCount + 1)) / seed.RegionCount;
             int offset = m_deadzone / 2;
@@ -35,15 +35,9 @@ namespace generate_terrain
             for (int i = 0; i < seed.RegionCount; i++)
             {
                 var next = m_rng.Next(region_size);
-                var color = m_rng.Next(0xFFFFFF);
-                var rate = m_rng.Next(seed.RegionGrowthRate, seed.RegionCount + seed.RegionGrowthRate);
-
                 var region = new Region(
                     bitmap_index: offset + next,
-                    color: (uint)(color | 0x000000FF),
-                    rate: rate,
-                    this,
-                    name: $"Region {i + 1}"
+                    terrain: this
                 );
 
                 m_tile[region.Index] = region.Color;
@@ -59,7 +53,7 @@ namespace generate_terrain
         {
             while (m_regions.Any(region => region.IsGrowing))
             {
-                foreach (var region in m_regions)
+                foreach (var region in m_regions.Where(region => region.IsGrowing))
                 {
                     region.Grow();
                 }
@@ -69,15 +63,15 @@ namespace generate_terrain
             Array.Copy(m_tile, m_bitmap, m_tile.Length);
         }
 
-        public bool Contains(Vector2 point)
-        {
-            return point.X > 0 && point.X < Options.MAP_TILE_SIZE && point.Y > 0 && point.Y < Options.MAP_TILE_SIZE;
-        }
+        public bool Contains(Vector<int> point) =>
+            Vector.GreaterThanOrEqualAll(point, Options.TILE_TOP_LEFT) &&
+            Vector.GreaterThanAll(Options.TILE_BOTTOM_RIGHT, point);
 
         public int Size => m_size;
         public int Deadzone => m_deadzone;
         public uint[] Bitmap => m_bitmap;
         public uint[] Tilemap => m_tile;
+        public Seed Seed => m_seed;
 
         public override string ToString()
         {

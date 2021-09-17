@@ -10,7 +10,7 @@ namespace generate_terrain
             var stopwatch = new Stopwatch();
             var seed = new Seed(
                 size: 1,
-                region_count: 8,
+                region_count: 4,
                 region_growth_rate: 5
             );
 
