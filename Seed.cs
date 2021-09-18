@@ -9,8 +9,8 @@ namespace generate_terrain
 
         public Seed(int seed)
         {
-            m_size = (int)(byte)seed >> 8;
-            m_region_count = (int)(byte)seed >> 4;
+            m_size = (int)(byte)seed >> 16;
+            m_region_count = (int)(byte)seed >> 8;
             m_region_growth_rate = (int)(byte)seed;
         }
 

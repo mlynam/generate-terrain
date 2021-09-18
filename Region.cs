@@ -16,7 +16,7 @@ namespace generate_terrain
         {
             m_index = bitmap_index;
             m_terrain = terrain;
-            m_color = (uint)terrain.RngNext(0xFFFFFF) | 0x000000FF;
+            m_color = (uint)terrain.RngNext(0xFFFFFF) | (uint)(terrain.RngNext(0xFFFFFF) << 16) | 0x000000FF;
             m_center = ConvertIndexToPosition(m_index);
 
             m_max_rsquared = RSquared(m_center, Options.TILE_TOP_LEFT);
