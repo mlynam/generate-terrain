@@ -3,40 +3,30 @@ using System.Numerics;
 
 namespace generate_terrain
 {
-    public partial class Region
+    public class Region<T> : RegionData where T : IRegionStepper
     {
-        int m_radius = 1;
-        Vector<int> m_center;
-        int m_index;
-        int m_max_rsquared;
-        uint m_color;
         Terrain m_terrain;
+        IRegionStepper m_stepper;
 
-        public Region(int bitmap_index, Terrain terrain)
+        public Region(int bitmap_index, Terrain terrain, T stepper)
         {
             m_index = bitmap_index;
             m_terrain = terrain;
             m_color = (uint)terrain.RngNext(0xFFFFFF) | (uint)(terrain.RngNext(0xFFFFFF) << 16) | 0x000000FF;
-            m_center = ConvertIndexToPosition(m_index);
+            m_center = m_terrain.ConvertTileIndexToPosition(m_index);
+            m_stepper = stepper;
 
-            m_max_rsquared = RSquared(m_center, Options.TILE_TOP_LEFT);
-            m_max_rsquared = Math.Max(m_max_rsquared, RSquared(m_center, Options.TILE_TOP_RIGHT));
-            m_max_rsquared = Math.Max(m_max_rsquared, RSquared(m_center, Options.TILE_BOTTOM_RIGHT));
-            m_max_rsquared = Math.Max(m_max_rsquared, RSquared(m_center, Options.TILE_BOTTOM_LEFT));
+            m_max_rsquared = RSquared(m_center, Helpers.TILE_TOP_LEFT);
+            m_max_rsquared = Math.Max(m_max_rsquared, RSquared(m_center, Helpers.TILE_TOP_RIGHT));
+            m_max_rsquared = Math.Max(m_max_rsquared, RSquared(m_center, Helpers.TILE_BOTTOM_RIGHT));
+            m_max_rsquared = Math.Max(m_max_rsquared, RSquared(m_center, Helpers.TILE_BOTTOM_LEFT));
         }
-
-        public int Index => m_index;
-        public Vector<int> Center => m_center;
-        public float Radius => m_radius;
-        public bool IsGrowing => (m_radius * m_radius) < m_max_rsquared;
-        public uint Color => m_color;
 
         public void Grow()
         {
-            var target = m_radius + 1 + m_terrain.RngNext(m_terrain.Seed.RegionGrowthRate);
-            for (; m_radius < target; ++m_radius)
+            for (var target = m_radius + m_terrain.RngNext(m_terrain.Seed.RegionGrowthRate, 1); m_radius < target; m_radius += .5f)
             {
-                Midpoint();
+                m_stepper.Step(m_terrain, this);
             }
         }
 
@@ -47,34 +37,6 @@ namespace generate_terrain
                 $"Index: {m_index}, " +
                 $"Max R-Squared: {m_max_rsquared}";
         }
-
-        private void DrawPoint(Vector<int> point)
-        {
-            var target = m_center + point;
-            if (m_terrain.Contains(target))
-            {
-                var index = ConvertPositionToIndex(target);
-                if (m_terrain.Tilemap[index] == Options.SEA_FLOOR)
-                {
-                    m_terrain.Tilemap[index] = m_color;
-                }
-            }
-        }
-
-        private Vector<int> ConvertIndexToPosition(int index)
-        {
-            var data = new int[4]
-            {
-                index % Options.MAP_TILE_SIZE,
-                index / Options.MAP_TILE_SIZE,
-                0,
-                0,
-            };
-
-            return new Vector<int>(data);
-        }
-
-        private int ConvertPositionToIndex(Vector<int> position) => position[1] * Options.MAP_TILE_SIZE + position[0];
 
         private static int RSquared(Vector<int> left, Vector<int> right)
         {

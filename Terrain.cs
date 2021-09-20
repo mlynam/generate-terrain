@@ -7,8 +7,8 @@ namespace generate_terrain
 {
     public class Terrain
     {
-        List<Region> m_regions = new List<Region>();
-        uint[] m_tile = new uint[Options.MAP_TILE_SIZE * Options.MAP_TILE_SIZE];
+        List<Region<IRegionStepper>> m_regions = new List<Region<IRegionStepper>>();
+        uint[] m_tile = new uint[Helpers.MAP_TILE_SIZE * Helpers.MAP_TILE_SIZE];
         uint[] m_bitmap;
         int m_size;
         int m_deadzone;
@@ -24,7 +24,7 @@ namespace generate_terrain
             }
 
             m_seed = seed;
-            m_size = size * Options.MAP_TILE_SIZE;
+            m_size = size * Helpers.MAP_TILE_SIZE;
             m_rng = new Random(seed.Pack());
             m_bitmap = new uint[size * m_tile.Length];
             m_deadzone = m_tile.Length / (seed.RegionCount + 1) / seed.RegionCount;
@@ -35,9 +35,10 @@ namespace generate_terrain
             for (int i = 0; i < seed.RegionCount; i++)
             {
                 var next = m_rng.Next(region_size);
-                var region = new Region(
+                var region = new Region<IRegionStepper>(
                     bitmap_index: offset + next,
-                    terrain: this
+                    terrain: this,
+                    stepper: new CircleRegionStepper()
                 );
 
                 m_tile[region.Index] = region.Color;
@@ -46,7 +47,7 @@ namespace generate_terrain
                 m_regions.Add(region);
             }
 
-            Array.Fill<uint>(m_tile, Options.SEA_FLOOR);
+            Array.Fill<uint>(m_tile, Helpers.SEA_FLOOR);
         }
 
         public void DrawFaultLines()
@@ -59,13 +60,43 @@ namespace generate_terrain
                 }
             }
 
+            // TODO: paint edges black
+            // TODO: paint regions as sea floor
+
             // TODO: reflect faultines into bitmap
             Array.Copy(m_tile, m_bitmap, m_tile.Length);
         }
 
+        public void DrawPoint(Vector<int> point, uint color)
+        {
+            if (Contains(point))
+            {
+                var index = ConvertPositionToTileIndex(point);
+                if (m_tile[index] == Helpers.SEA_FLOOR)
+                {
+                    m_tile[index] = color;
+                }
+            }
+        }
+
+        public Vector<int> ConvertTileIndexToPosition(int index)
+        {
+            var data = new int[4]
+            {
+                index % Helpers.MAP_TILE_SIZE,
+                index / Helpers.MAP_TILE_SIZE,
+                0,
+                0,
+            };
+
+            return new Vector<int>(data);
+        }
+
+        public int ConvertPositionToTileIndex(Vector<int> position) => position[1] * Helpers.MAP_TILE_SIZE + position[0];
+
         public bool Contains(Vector<int> point) =>
-            Vector.GreaterThanOrEqualAll(point, Options.TILE_TOP_LEFT) &&
-            Vector.GreaterThanAll(Options.TILE_BOTTOM_RIGHT, point);
+            Vector.GreaterThanOrEqualAll(point, Helpers.TILE_TOP_LEFT) &&
+            Vector.GreaterThanAll(Helpers.TILE_BOTTOM_RIGHT, point);
 
         public int Size => m_size;
         public int Deadzone => m_deadzone;
@@ -77,12 +108,12 @@ namespace generate_terrain
         {
             return "Terrain".PadRight(10) +
                 $"Seed: {m_seed.Pack()}, " +
-                $"Tilesize: {Options.MAP_TILE_SIZE}, " +
+                $"Tilesize: {Helpers.MAP_TILE_SIZE}, " +
                 $"Size: {m_seed.Size}, " +
                 $"Growth Rate: {m_seed.RegionGrowthRate}\n" +
                 string.Join('\n', m_regions);
         }
 
-        public int RngNext(int max) => m_rng.Next(max);
+        public int RngNext(int max, int min = 0) => m_rng.Next(min, max);
     }
 }
