@@ -9,8 +9,8 @@ namespace generate_terrain
             var benchmark = new Benchmark();
             var seed = new Seed(
                 size: 1,
-                region_count: 4,
-                region_growth_rate: 3
+                region_count: 3,
+                region_growth_rate: 6
             );
 
             Terrain terrain = new Terrain(seed);

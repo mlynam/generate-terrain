@@ -17,9 +17,9 @@ namespace generate_terrain
             m_stepper = stepper;
 
             m_max_rsquared = RSquared(m_center, Helpers.TILE_TOP_LEFT);
-            m_max_rsquared = Math.Max(m_max_rsquared, RSquared(m_center, Helpers.TILE_TOP_RIGHT));
-            m_max_rsquared = Math.Max(m_max_rsquared, RSquared(m_center, Helpers.TILE_BOTTOM_RIGHT));
-            m_max_rsquared = Math.Max(m_max_rsquared, RSquared(m_center, Helpers.TILE_BOTTOM_LEFT));
+            m_max_rsquared = MathF.Max(m_max_rsquared, RSquared(m_center, Helpers.TILE_TOP_RIGHT));
+            m_max_rsquared = MathF.Max(m_max_rsquared, RSquared(m_center, Helpers.TILE_BOTTOM_RIGHT));
+            m_max_rsquared = MathF.Max(m_max_rsquared, RSquared(m_center, Helpers.TILE_BOTTOM_LEFT));
         }
 
         public void Grow()
@@ -38,11 +38,11 @@ namespace generate_terrain
                 $"Max R-Squared: {m_max_rsquared}";
         }
 
-        private static int RSquared(Vector<int> left, Vector<int> right)
+        private static float RSquared(Vector2 left, Vector2 right)
         {
-            var r = Vector.Subtract(left, right);
-            var x = r[0];
-            var y = r[1];
+            var r = left - right;
+            var x = r.X;
+            var y = r.Y;
             return x * x + y * y;
         }
     }

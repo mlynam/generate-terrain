@@ -1,3 +1,4 @@
+using System;
 using System.Numerics;
 
 namespace generate_terrain
@@ -6,15 +7,10 @@ namespace generate_terrain
     {
         public void Step(Terrain terrain, RegionData region)
         {
-            Vector<int> point = new Vector<int>(new int[4] {
-                (int)region.Radius,
-                0,
-                0,
-                0
-            });
+            Vector2 point = new Vector2((int)region.Radius, 0);
 
             float re = 0f;
-            while (point[1] <= point[0])
+            while (point.Y <= point.X)
             {
                 DrawSegments(terrain, region, point);
 
@@ -22,26 +18,26 @@ namespace generate_terrain
                 var next = point + Helpers.UP;
                 re = RadiusError(next, region.Radius);
 
-                var d = ((re + next[1]) * 2) + next[0] - 1;
+                var d = ((re + next.Y) * 2) + next.X - 1;
                 point = d > 0 ? next + Helpers.LEFT : next;
             }
         }
 
-        private void DrawSegments(Terrain terrain, RegionData region, Vector<int> point)
+        private void DrawSegments(Terrain terrain, RegionData region, Vector2 point)
         {
-            terrain.DrawPoint(region.Center + point, region.Color);
-            terrain.DrawPoint(region.Center + point * Helpers.FLIPY, region.Color);
-            terrain.DrawPoint(region.Center + point * Helpers.FLIPX, region.Color);
-            terrain.DrawPoint(region.Center + point * Helpers.FLIPX * Helpers.FLIPY, region.Color);
+            terrain.DrawRegionPoint(region.Center + point, region.Color);
+            terrain.DrawRegionPoint(region.Center + point * Helpers.FLIPY, region.Color);
+            terrain.DrawRegionPoint(region.Center + point * Helpers.FLIPX, region.Color);
+            terrain.DrawRegionPoint(region.Center + point * Helpers.FLIPX * Helpers.FLIPY, region.Color);
 
             var transpose = Helpers.Transpose(point);
-            terrain.DrawPoint(region.Center + transpose, region.Color);
-            terrain.DrawPoint(region.Center + transpose * Helpers.FLIPY, region.Color);
-            terrain.DrawPoint(region.Center + transpose * Helpers.FLIPX, region.Color);
-            terrain.DrawPoint(region.Center + transpose * Helpers.FLIPX * Helpers.FLIPY, region.Color);
+            terrain.DrawRegionPoint(region.Center + transpose, region.Color);
+            terrain.DrawRegionPoint(region.Center + transpose * Helpers.FLIPY, region.Color);
+            terrain.DrawRegionPoint(region.Center + transpose * Helpers.FLIPX, region.Color);
+            terrain.DrawRegionPoint(region.Center + transpose * Helpers.FLIPX * Helpers.FLIPY, region.Color);
         }
 
-        private static float RadiusError(Vector<int> point, float r) =>
-            point[0] * point[0] + point[1] * point[1] - r * r;
+        private static float RadiusError(Vector2 point, float r) =>
+            point.X * point.X + point.Y * point.Y - r * r;
     }
 }

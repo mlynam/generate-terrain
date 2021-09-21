@@ -7,8 +7,11 @@ namespace generate_terrain
 {
     public class Terrain
     {
+        public const int MAP_TILE_SIZE = 512;
+        public const uint SEA_FLOOR = 0x0A1435FF;
+
         List<Region<IRegionStepper>> m_regions = new List<Region<IRegionStepper>>();
-        uint[] m_tile = new uint[Helpers.MAP_TILE_SIZE * Helpers.MAP_TILE_SIZE];
+        uint[] m_tile = new uint[MAP_TILE_SIZE * MAP_TILE_SIZE];
         uint[] m_bitmap;
         int m_size;
         int m_deadzone;
@@ -24,7 +27,7 @@ namespace generate_terrain
             }
 
             m_seed = seed;
-            m_size = size * Helpers.MAP_TILE_SIZE;
+            m_size = size * MAP_TILE_SIZE;
             m_rng = new Random(seed.Pack());
             m_bitmap = new uint[size * m_tile.Length];
             m_deadzone = m_tile.Length / (seed.RegionCount + 1) / seed.RegionCount;
@@ -47,7 +50,7 @@ namespace generate_terrain
                 m_regions.Add(region);
             }
 
-            Array.Fill<uint>(m_tile, Helpers.SEA_FLOOR);
+            Array.Fill<uint>(m_tile, SEA_FLOOR);
         }
 
         public void DrawFaultLines()
@@ -60,43 +63,90 @@ namespace generate_terrain
                 }
             }
 
-            // TODO: paint edges black
-            // TODO: paint regions as sea floor
+            for (int i = 0; i < m_tile.Length; i++)
+            {
+                if (m_tile[i] == SEA_FLOOR)
+                {
+                    m_tile[i] = 0xFF;
+                }
+                else
+                {
+                    m_tile[i] = SEA_FLOOR;
+                }
+            }
 
-            // TODO: reflect faultines into bitmap
             Array.Copy(m_tile, m_bitmap, m_tile.Length);
         }
 
-        public void DrawPoint(Vector<int> point, uint color)
+        public void DrawRegionPoint(Vector2 point, uint color)
         {
-            if (Contains(point))
+            var i = ConvertPositionToTileIndex(point);
+            if (Contains(point) && m_tile[i] == SEA_FLOOR)
             {
-                var index = ConvertPositionToTileIndex(point);
-                if (m_tile[index] == Helpers.SEA_FLOOR)
+                var adjacent = new Vector2[]
                 {
-                    m_tile[index] = color;
+                    point + Helpers.UP,
+                    point + Helpers.DOWN,
+                    point + Helpers.LEFT,
+                    point + Helpers.RIGHT,
+                };
+
+                foreach (var position in adjacent)
+                {
+                    var j = ConvertPositionToTileIndex(position);
+                    if (Contains(position) && m_tile[j] != SEA_FLOOR && m_tile[j] != color)
+                    {
+                        // Ineligible point
+                        return;
+                    }
+                }
+
+                if (m_tile[i] == SEA_FLOOR)
+                {
+                    m_tile[i] = color;
                 }
             }
         }
 
-        public Vector<int> ConvertTileIndexToPosition(int index)
+        public Vector2 ConvertTileIndexToPosition(int index) => new Vector2(
+            x: index % MAP_TILE_SIZE,
+            y: index / MAP_TILE_SIZE
+        );
+
+        public int ConvertPositionToTileIndex(Vector2 position) =>
+            (int)position.Y * MAP_TILE_SIZE +
+            (int)position.X;
+
+        public bool Contains(Vector2 point) =>
+            point.X >= Helpers.TILE_TOP_LEFT.X &&
+            point.Y >= Helpers.TILE_TOP_LEFT.Y &&
+            point.X < Helpers.TILE_BOTTOM_RIGHT.X &&
+            point.Y < Helpers.TILE_BOTTOM_RIGHT.Y;
+
+        private void PaintFaults(int stride, ArraySegment<uint> segment)
         {
-            var data = new int[4]
+            if (stride == 2)
             {
-                index % Helpers.MAP_TILE_SIZE,
-                index / Helpers.MAP_TILE_SIZE,
-                0,
-                0,
-            };
+                for (int i = 0; i < segment.Count; i += stride)
+                {
+                    if (segment[i] != segment[i + 1])
+                    {
+                        segment[i] = 0x000000FF;
+                    }
+                }
 
-            return new Vector<int>(data);
+                return;
+            }
+
+            for (int i = 0; i < segment.Count - stride; i += stride)
+            {
+                var next = segment[i..(i + stride)];
+                if (next[0] != next[^1])
+                {
+                    PaintFaults(stride / 2, next);
+                }
+            }
         }
-
-        public int ConvertPositionToTileIndex(Vector<int> position) => position[1] * Helpers.MAP_TILE_SIZE + position[0];
-
-        public bool Contains(Vector<int> point) =>
-            Vector.GreaterThanOrEqualAll(point, Helpers.TILE_TOP_LEFT) &&
-            Vector.GreaterThanAll(Helpers.TILE_BOTTOM_RIGHT, point);
 
         public int Size => m_size;
         public int Deadzone => m_deadzone;
@@ -108,7 +158,7 @@ namespace generate_terrain
         {
             return "Terrain".PadRight(10) +
                 $"Seed: {m_seed.Pack()}, " +
-                $"Tilesize: {Helpers.MAP_TILE_SIZE}, " +
+                $"Tilesize: {MAP_TILE_SIZE}, " +
                 $"Size: {m_seed.Size}, " +
                 $"Growth Rate: {m_seed.RegionGrowthRate}\n" +
                 string.Join('\n', m_regions);
