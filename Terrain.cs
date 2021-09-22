@@ -8,9 +8,9 @@ namespace generate_terrain
     public class Terrain
     {
         public const int MAP_TILE_SIZE = 512;
-        public const uint SEA_FLOOR = 0x0A1435FF;
+        public const uint SEA_FLOOR = 0x0A1400FF;
 
-        List<Region<IRegionStepper>> m_regions = new List<Region<IRegionStepper>>();
+        List<IPlate> m_plates = new List<IPlate>();
         uint[] m_tile = new uint[MAP_TILE_SIZE * MAP_TILE_SIZE];
         uint[] m_bitmap;
         int m_size;
@@ -38,16 +38,14 @@ namespace generate_terrain
             for (int i = 0; i < seed.RegionCount; i++)
             {
                 var next = m_rng.Next(region_size);
-                var region = new Region<IRegionStepper>(
+                var plate = new Plate<CirclePlateStepper>(
                     bitmap_index: offset + next,
                     terrain: this,
-                    stepper: new CircleRegionStepper()
+                    stepper: new CirclePlateStepper()
                 );
 
-                m_tile[region.Index] = region.Color;
                 offset += (region_size + m_deadzone);
-
-                m_regions.Add(region);
+                m_plates.Add(plate);
             }
 
             Array.Fill<uint>(m_tile, SEA_FLOOR);
@@ -55,9 +53,9 @@ namespace generate_terrain
 
         public void DrawFaultLines()
         {
-            while (m_regions.Any(region => region.IsGrowing))
+            while (m_plates.Any(region => region.IsGrowing))
             {
-                foreach (var region in m_regions.Where(region => region.IsGrowing))
+                foreach (var region in m_plates.Where(region => region.IsGrowing))
                 {
                     region.Grow();
                 }
@@ -69,43 +67,9 @@ namespace generate_terrain
                 {
                     m_tile[i] = 0xFF;
                 }
-                else
-                {
-                    m_tile[i] = SEA_FLOOR;
-                }
             }
 
             Array.Copy(m_tile, m_bitmap, m_tile.Length);
-        }
-
-        public void DrawRegionPoint(Vector2 point, uint color)
-        {
-            var i = ConvertPositionToTileIndex(point);
-            if (Contains(point) && m_tile[i] == SEA_FLOOR)
-            {
-                var adjacent = new Vector2[]
-                {
-                    point + Helpers.UP,
-                    point + Helpers.DOWN,
-                    point + Helpers.LEFT,
-                    point + Helpers.RIGHT,
-                };
-
-                foreach (var position in adjacent)
-                {
-                    var j = ConvertPositionToTileIndex(position);
-                    if (Contains(position) && m_tile[j] != SEA_FLOOR && m_tile[j] != color)
-                    {
-                        // Ineligible point
-                        return;
-                    }
-                }
-
-                if (m_tile[i] == SEA_FLOOR)
-                {
-                    m_tile[i] = color;
-                }
-            }
         }
 
         public Vector2 ConvertTileIndexToPosition(int index) => new Vector2(
@@ -123,31 +87,6 @@ namespace generate_terrain
             point.X < Helpers.TILE_BOTTOM_RIGHT.X &&
             point.Y < Helpers.TILE_BOTTOM_RIGHT.Y;
 
-        private void PaintFaults(int stride, ArraySegment<uint> segment)
-        {
-            if (stride == 2)
-            {
-                for (int i = 0; i < segment.Count; i += stride)
-                {
-                    if (segment[i] != segment[i + 1])
-                    {
-                        segment[i] = 0x000000FF;
-                    }
-                }
-
-                return;
-            }
-
-            for (int i = 0; i < segment.Count - stride; i += stride)
-            {
-                var next = segment[i..(i + stride)];
-                if (next[0] != next[^1])
-                {
-                    PaintFaults(stride / 2, next);
-                }
-            }
-        }
-
         public int Size => m_size;
         public int Deadzone => m_deadzone;
         public uint[] Bitmap => m_bitmap;
@@ -161,7 +100,7 @@ namespace generate_terrain
                 $"Tilesize: {MAP_TILE_SIZE}, " +
                 $"Size: {m_seed.Size}, " +
                 $"Growth Rate: {m_seed.RegionGrowthRate}\n" +
-                string.Join('\n', m_regions);
+                string.Join('\n', m_plates);
         }
 
         public int RngNext(int max, int min = 0) => m_rng.Next(min, max);

@@ -14,7 +14,13 @@ namespace generate_terrain
         public static readonly Vector2 RIGHT = new Vector2(1, 0);
         public static readonly Vector2 FLIPX = new Vector2(-1, 1);
         public static readonly Vector2 FLIPY = new Vector2(1, -1);
-
+        public const int RGBA_COMPONENT_BITS = 8;
         public static Vector2 Transpose(Vector2 point) => new Vector2(point.Y, point.X);
+        public static uint AddBlue(uint color, int value)
+        {
+            var b = (byte)(color >> RGBA_COMPONENT_BITS);
+            var rg = (color >> RGBA_COMPONENT_BITS * 2) << RGBA_COMPONENT_BITS * 2;
+            return rg | (uint)((byte)(b + value) << RGBA_COMPONENT_BITS) | (byte)color;
+        }
     }
 }
